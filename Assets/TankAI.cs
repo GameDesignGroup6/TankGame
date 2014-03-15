@@ -1,25 +1,31 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 public class TankAI : MonoBehaviour {
 
 	/*
-	 * 0 = idle
-	 * 1 = attack
-	 * 2 = flee
-	 * 4 = caution
-	 * 5 = banded
+	 * idle
+	 * attack
+	 * flee
+	 * caution
+	 * follow
 	 */
-	public int state;
+	public string state;
 	public int tankHealth;
 	public int attackDamage = 1;
 
-	// Use this for initialization
-	void Start () {
-		state = 0;
-	}
+	private Collider[] enemyTanks;
+	private Collider[] allyTanks;
+	public Vector3 seekingPoint;
+
+	public int sightRange = 15;
+	public int coneBaseRadius = 30;
 	
-	// Update is called once per frame
+	void Start () {
+		state = "Idle";
+	}
+
 	void Update () {
 		Look ();
 		Move ();
@@ -27,16 +33,47 @@ public class TankAI : MonoBehaviour {
 
 	void Look(){
 		//check radius
+		Collider[] InRangeTanks = Physics.OverlapSphere (transform.position, sightRange);
+		//var Enemys = from tank in InRangeTanks where tank.tag != transform.tag select tank;
+		//var Allys = from tank in InRangeTanks where tank.tag == transform.tag select tank;
+		Collider[] Enemys = new Collider[InRangeTanks.Length];
+		Collider[] Allys = new Collider[InRangeTanks.Length];
 		//check cone
+		foreach (Collider tank in InRangeTanks) {
+			var targetLocalPosition = transform.InverseTransformPoint(tank.transform.position);		//this may not be right
+			if (targetLocalPosition.z < 0){
+				continue;
+			}
+			var coneRadius = (targetLocalPosition.z / sightRange) * coneBaseRadius;
+			Vector2 TargetXY = new Vector2(targetLocalPosition.x, targetLocalPosition.y);
+			if (TargetXY.magnitude > coneRadius){
+				continue;
+			}
+			if(tank.tag == transform.tag){
+				int allyLength = Allys.Length;
+				Allys[allyLength] = tank;
+			}
+			else{
+				int enemyLength = Enemys.Length;
+				Enemys[enemyLength] = tank;
+			}
+		}
 		//raycast
-		//if(enemy visisble && state != 2){
-		//	state = 1;}
-		//if(ally visible && state == 0){
-		//	state = 5;}
-		//if(sound origin visible && state == 4)
-		//	state = 0;
+		if(Enemys.Length != 0 && !state.Equals("Flee")){
+			state = "Attack";
+		}
+		if(Allys.Length != 0 && state.Equals("Idle")){
+			state = "Follow";
+		//	seekingPoint = Ally position
+		}
+		//if(sound origin visible && state == "Caution)
+		//	state = "Idle";
+		if(state.Equals("Attack") && Enemys.Length == 0){
+			state = "Follow";
+		//	seekingPoint = last point of enemy;
+		}
 		//else{
-		//	possibly state to 0 if in state 5
+		//	possibly state to "Idle" if in state "Follow"
 	}
 	void Move(){
 		/*
