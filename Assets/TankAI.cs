@@ -8,7 +8,6 @@ public class TankAI : MonoBehaviour {
 	 * idle
 	 * attack
 	 * flee
-	 * caution
 	 * follow
 	 */
 	public string state;
@@ -61,31 +60,30 @@ public class TankAI : MonoBehaviour {
 		//raycast
 		if(Enemys.Length != 0 && !state.Equals("Flee")){
 			state = "Attack";
+			seekingPoint = Enemys[0].transform.position;
 		}
 		if(Allys.Length != 0 && state.Equals("Idle")){
 			state = "Follow";
-		//	seekingPoint = Ally position
+			seekingPoint = Allys[0].transform.position;
 		}
-		//if(sound origin visible && state == "Caution)
-		//	state = "Idle";
+		if(seekingPoint == transform.position && state == "Follow")
+			state = "Idle";
 		if(state.Equals("Attack") && Enemys.Length == 0){
 			state = "Follow";
-		//	seekingPoint = last point of enemy;
 		}
 		//else{
 		//	possibly state to "Idle" if in state "Follow"
 	}
 	void Move(){
-		/*
-		 * if (state == 0){
-		 * 		Wander();
-		 * if (state == 1){
-		 * 		AttackMove();
-		 * if (state == 2){
-		 * 		Flee();
-		 * if (state == 4 or 5){
-		 * 		Seek();
-		 */
+
+		 if (state == "idle")
+		  		Wander();
+		 if (state == "Attack")
+		  		AttackMove();
+		 if (state == "Flee")
+		  		Flee();
+		 if (state == "Follow")
+		  		Seek();
 	}
 
 	void Wander(){
