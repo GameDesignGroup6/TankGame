@@ -12,17 +12,25 @@ public class TankAI : MonoBehaviour {
 	 */
 	public int state;
 	public int tankHealth;
-	public int attackDamage = 1;
+	public int attackDamage;
+	public int rotateSpeed;
+	public Transform turret;
+	public Transform target;
+	public Transform bullet;
 
 	// Use this for initialization
 	void Start () {
 		state = 0;
+		tankHealth=10;
+		attackDamage=1;
+		rotateSpeed=60;
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		Look ();
 		Move ();
+		Aim ();
 	}
 
 	void Look(){
@@ -71,12 +79,20 @@ public class TankAI : MonoBehaviour {
 		 * if (barrel direction correct){
 		 * 		Shoot();
 		 */
+		turret.LookAt (target);
+		//target.Translate(Vector3.right); //just testing lookat
+		Shoot ();
+
 	}
 
 	void Shoot(){
 		//choose random point around enemy tank
 		//check if tank is on the point
 		//damage tank if hit
+		Rigidbody clone;
+		clone = Instantiate(bullet, turret.GetChild (1).position,turret.rotation) as Rigidbody;
+		clone.velocity=turret.GetChild (1).forward*120;
+
 		}
 }
 
