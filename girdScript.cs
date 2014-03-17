@@ -174,10 +174,9 @@ public class GridScript1 : MonoBehaviour {
 						int chance = Random.Range(0,10);
 						Transform newCell= cell;
 						//newCell.position=newCell.position+4*Vector3.up;
-						Debug.Log(chance);
-						if (chance >= 5) {
+						if (chance >=7) {
 							Instantiate (TreePrefab, newCell.position+3*Vector3.up, Quaternion.identity);
-						while (Random.Range(0,10)>3) {
+						while (Random.Range(0,10)>5) {
 							int haha = Random.Range (0, 4);
 								try{
 							//	while (newCell.GetComponent<CellScript>().Adjacents[haha].GetComponent<CellScript>().visited){
@@ -191,10 +190,10 @@ public class GridScript1 : MonoBehaviour {
 								catch(System.Exception e){}
 							}
 						}
-						else if (chance<5){
+						else if (chance<=4){
 							Destroy(newCell.gameObject);
 							Instantiate (WaterPrefab, newCell.position, Quaternion.identity);
-								while (Random.Range(0,10)>3) {
+								while (Random.Range(0,10)>5) {
 								int haha = Random.Range (0, 4);
 								try{
 								//	while (newCell.GetComponent<CellScript>().Adjacents[haha].GetComponent<CellScript>().visited){
@@ -209,6 +208,7 @@ public class GridScript1 : MonoBehaviour {
 								catch(System.Exception e){}
 								} 
 					}
+						else newCell.position=newCell.position+4*Vector3.up;
 
 				}
 				}
@@ -242,7 +242,6 @@ public class GridScript1 : MonoBehaviour {
 	
 	
 	void Update() {
-		Debug.Log (Time.time);
 		// Pressing 'F1' will generate a new maze.
 		if (Input.GetKeyDown(KeyCode.F1)) {
 			Application.LoadLevel(0);	
