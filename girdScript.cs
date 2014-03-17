@@ -47,7 +47,7 @@ public class GridScript1 : MonoBehaviour {
 	void SetRandomNumbers () {
 		foreach (Transform child in transform) {
 			int weight = Random.Range(0,10);
-			child.GetComponentInChildren<TextMesh>().text = weight.ToString();
+			//child.GetComponentInChildren<TextMesh>().text = weight.ToString();
 			child.GetComponent<CellScript>().Weight = weight;
 		}
 	}
@@ -166,7 +166,7 @@ public class GridScript1 : MonoBehaviour {
 				
 				foreach (Transform cell in Grid) {
 					// Removes displayed weight
-					cell.GetComponentInChildren<TextMesh>().renderer.enabled = false;
+				//	cell.GetComponentInChildren<TextMesh>().renderer.enabled = false;
 
 					if (!PathCells.Contains(cell)) {
 						// HINT: Try something here to make the maze 3D
@@ -175,7 +175,7 @@ public class GridScript1 : MonoBehaviour {
 						Transform newCell= cell;
 						//newCell.position=newCell.position+4*Vector3.up;
 						if (chance >=7) {
-							Instantiate (TreePrefab, newCell.position+3*Vector3.up, Quaternion.identity);
+							Instantiate (TreePrefab, newCell.position+2*Vector3.up, Quaternion.identity);
 						while (Random.Range(0,10)>5) {
 							int haha = Random.Range (0, 4);
 								try{
@@ -184,7 +184,7 @@ public class GridScript1 : MonoBehaviour {
 								//		if(Time.time>8f)break;
 								//	}
 								newCell = newCell.GetComponent<CellScript> ().Adjacents [haha];
-								Instantiate (TreePrefab, newCell.position+3*Vector3.up, Quaternion.identity);
+								Instantiate (TreePrefab, newCell.position+2*Vector3.up, Quaternion.identity);
 								newCell.GetComponent<CellScript> ().visited = true;
 								}
 								catch(System.Exception e){}
@@ -208,7 +208,8 @@ public class GridScript1 : MonoBehaviour {
 								catch(System.Exception e){}
 								} 
 					}
-						else newCell.position=newCell.position+4*Vector3.up;
+						else if(newCell!=WaterPrefab)
+							newCell.position=newCell.position+4*Vector3.up;
 
 				}
 				}
