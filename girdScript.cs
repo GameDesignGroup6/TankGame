@@ -221,7 +221,7 @@ public class GridScript1 : MonoBehaviour {
 			next = AdjSet[lowestList][0];
 			// Since we do not want the same cell in both AdjSet and Set, remove this 'next' variable from AdjSet.
 			AdjSet[lowestList].Remove(next);
-		} while (next.GetComponent<CellScript>().AdjacentsOpened >= 3);	// This keeps the walls in the grid, otherwise Prim's Algorithm would just visit every cell
+		} while (next.GetComponent<CellScript>().AdjacentsOpened >= 4);	// This keeps the walls in the grid, otherwise Prim's Algorithm would just visit every cell
 		
 		// The 'next' transform's material color becomes white.
 		next.renderer.material.color = Color.white;
