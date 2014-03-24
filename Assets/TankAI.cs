@@ -9,6 +9,7 @@ public class TankAI : MonoBehaviour {
 	 * attack
 	 * flee
 	 * follow
+	 * visit
 	 */
 	public string state;
 	public int tankHealth;
@@ -17,6 +18,7 @@ public class TankAI : MonoBehaviour {
 	public Collider[] enemyTanks;
 	public Collider[] allyTanks;	
 	public Vector3 seekingPoint;
+	public Transform seekingObject;
 	
 	public int sightRange = 30;
 	public int coneBaseRadius = 30;
@@ -30,9 +32,10 @@ public class TankAI : MonoBehaviour {
 	private float wanderAngle;
 	
 	void Start () {
-		state = "Idle";
+		state = "Visit";
 		velocity = Vector3.zero;
 		wanderAngle = Vector3.Angle (velocity, new Vector3(0,0,1));
+		seekingPoint = transform.position + 2 * transform.forward;	
 	}
 	
 	void Update () {
@@ -68,25 +71,39 @@ public class TankAI : MonoBehaviour {
 				Enemys.Add (tank);
 			}
 		}
-		//raycast
+		//check for blocked vision
+
 		if(Enemys.Count != 0 && (!state.Equals("Flee") || !state.Equals ("Attack"))){
 			state = "Attack";
 			Collider enemy = (Collider)Enemys[0];
 			seekingPoint = enemy.transform.position;
+			seekingObject = enemy.transform;
 		}
 		if(Allys.Count != 0 && state.Equals("Idle")){
 			state = "Follow";
 			Collider ally = (Collider)Allys[0];
 			seekingPoint = ally.transform.position;
+			seekingObject = ally.transform;
 		}
-		if(seekingPoint == transform.position && state == "Follow")
+		if(state.Equals("Follow") && seekingObject == transform){
+			state = "Idle";
+		}
+		if (Allys.Count == 0 && state.Equals ("Follow")) {
+			state = "Visit";
+			seekingObject = null;
+		}
+		Collider[] seekingArea = Physics.OverlapSphere (seekingPoint, .5f);
+		if(seekingArea.Contains(transform.collider) && state == "Visit")
 			state = "Idle";
 		if(state.Equals("Attack") && Enemys.Count == 0){
-			state = "Follow";
+			state = "Visit";
+			seekingObject = null;
 		}
 		//else{
 		//	possibly state to "Idle" if in state "Follow"
 	}
+
+
 	void Move(){
 		
 		if (state == "Idle") {
@@ -102,6 +119,10 @@ public class TankAI : MonoBehaviour {
 			return;
 		}
 		if (state == "Follow") {
+			Seek ();
+			return;
+		}
+		if (state == "Visit") {
 			Seek ();
 			return;
 		}
@@ -130,7 +151,16 @@ public class TankAI : MonoBehaviour {
 		Vector3 wanderForce;
 		wanderAngle += Random.Range(0f, 1f) * 1f - .5f * .5f;
 		wanderForce = circleCenter + displacement;
-		
+
+		Vector3 ahead = transform.position + velocity.normalized * sightRange;
+		Vector3 ahead2 = transform.position + velocity.normalized * sightRange * 0.5f;
+		Vector3 avoidance = new Vector3(0,0,0);
+		RaycastHit hit;
+		if (Physics.Raycast (transform.position, velocity, out hit, sightRange)) {
+			avoidance.x = ahead.x - hit.transform.position.x;
+			avoidance.z = ahead.z - hit.transform.position.z;
+		}
+		wanderForce += avoidance;
 		wanderForce = Vector3.ClampMagnitude(wanderForce, acceleration);
 		wanderForce = wanderForce / mass;
 		velocity = Vector3.ClampMagnitude((velocity + wanderForce), maxVelocity);
@@ -158,18 +188,8 @@ public class TankAI : MonoBehaviour {
 		if (distance <= slowingRadius) {
 			desiredVelocity = new Vector3(0,0,0);
 		}
-		Vector3 steering = (desiredVelocity - velocity);
+		Step (desiredVelocity);
 		
-		steering = Vector3.	ClampMagnitude(steering, acceleration);
-		steering = steering / mass;
-		
-		velocity = Vector3.ClampMagnitude((velocity + steering), maxVelocity);
-		if (velocity.magnitude >= .002f || velocity.magnitude <= -.002f) {
-			Quaternion direction = Quaternion.LookRotation(velocity);
-			transform.rotation = direction;
-		}
-		transform.Translate(velocity.magnitude*Vector3.forward);
-
 		Aim ();
 	}
 	
@@ -177,25 +197,34 @@ public class TankAI : MonoBehaviour {
 		//courtesy of http://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-flee-and-arrival--gamedev-1303
 		Vector3 desiredVelocity = (transform.position-seekingPoint).normalized;
 		desiredVelocity = new Vector3 (desiredVelocity.x*maxVelocity, 0f, desiredVelocity.z*maxVelocity);
-		Vector3 steering = desiredVelocity - velocity;
-		
-		steering = Vector3.	ClampMagnitude(steering, acceleration);
-		steering = steering / mass;
-		
-		velocity = Vector3.ClampMagnitude((velocity + steering), maxVelocity);
-		if (velocity.magnitude >= .2f || velocity.magnitude <= -.2f) {
-			Quaternion direction = Quaternion.LookRotation(velocity);
-			transform.rotation = direction;
-		}
-		transform.Translate(velocity.magnitude*Vector3.forward);
+		Step (desiredVelocity);
 	}
 	
 	void Seek(){
+		if (state.Equals ("Follow")) {
+			seekingPoint = seekingObject.position;
+		}
+
 		//courtesy of http://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-seek--gamedev-849
 		Vector3 desiredVelocity = (seekingPoint - transform.position).normalized;
 		desiredVelocity = new Vector3 (desiredVelocity.x*maxVelocity, 0f, desiredVelocity.z*maxVelocity);
+		Step (desiredVelocity);
+	}
+
+	void Step(Vector3 desiredVelocity){
 		Vector3 steering = desiredVelocity - velocity;
-		
+
+		//check for collision
+		Vector3 ahead = transform.position + velocity.normalized * sightRange;
+		Vector3 ahead2 = transform.position + velocity.normalized * sightRange * 0.5f;
+		Vector3 avoidance = new Vector3(0,0,0);
+		RaycastHit hit;
+		if (Physics.Raycast (transform.position, velocity, out hit, sightRange)) {
+			avoidance.x = ahead.x - hit.transform.position.x;
+			avoidance.z = ahead.z - hit.transform.position.z;
+		}
+
+		steering += avoidance;
 		steering = Vector3.	ClampMagnitude(steering, acceleration);
 		steering = steering / mass;
 		
@@ -204,6 +233,7 @@ public class TankAI : MonoBehaviour {
 			Quaternion direction = Quaternion.LookRotation(velocity);
 			transform.rotation = direction;
 		}
+
 		transform.Translate(velocity.magnitude*Vector3.forward);
 	}
 	
