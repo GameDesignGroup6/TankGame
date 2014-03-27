@@ -18,7 +18,9 @@ public class TankAI : MonoBehaviour {
 	 */
 	public string state;
 	public int tankHealth = 5;
-	
+
+	public float aimRotateRate; //made it public for easy adjustment. could be made private when the value is finalized
+	public float lookRotateRate; //same thing applies to this value as well
 	private Transform turret;
 	public Transform target;
 	public Transform projectile;
@@ -53,10 +55,13 @@ public class TankAI : MonoBehaviour {
 		seekingPoint = transform.position + 2 * transform.forward;
 		foreach (Transform child in transform) {
 			if(child.name == "Turret Mount"){
-				turret = child.GetChild(0);
+				turret = child;
+				//turret = child.GetChild(0); //made the barrel fall off the tank lol.
 			}
 		}
 		followers = new Transform[6];
+		aimRotateRate = 1; //felt like a natural slow turn when testing with disabled look method
+		lookRotateRate = 10; //any slower and the tank may end up running around in a circle
 	}
 	
 	void Update () {
@@ -72,6 +77,7 @@ public class TankAI : MonoBehaviour {
 		else{
 			Step(moveAround(Vector3.zero));
 		}
+		Aim ();
 	}
 	
 	void Look(){
@@ -284,7 +290,7 @@ public class TankAI : MonoBehaviour {
 		velocity = Vector3.ClampMagnitude((velocity + steering), maxVelocity);
 		if (velocity.magnitude >= .002f || velocity.magnitude <= -.002f) {
 			Quaternion direction = Quaternion.LookRotation(velocity);
-			transform.rotation = direction;
+			transform.rotation = Quaternion.Slerp(transform.rotation,direction,Time.deltaTime * lookRotateRate);//direction;
 		}
 
 		transform.Translate(velocity.magnitude*Vector3.forward);
@@ -297,8 +303,9 @@ public class TankAI : MonoBehaviour {
 	}
 	
 	void Aim(){
-
-		turret.parent.LookAt (seekingObject);
+		Quaternion toLookRotation = Quaternion.LookRotation(target.position-turret.position);
+		turret.rotation = Quaternion.Slerp(turret.rotation, toLookRotation,Time.deltaTime * aimRotateRate);
+		//turret.parent.LookAt (seekingObject);
 		if(ready)
 			Shoot ();
 	}
